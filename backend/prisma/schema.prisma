@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTENTICACIÓN Y USUARIOS
+// ─────────────────────────────────────────────
+
+enum Rol {
+  DOCENTE
+  ADMINISTRADOR
+}
+
+model Usuario {
+  id        Int            @id @default(autoincrement())
+  nombre    String
+  apellidos String
+  dni       String         @unique
+  username  String         @unique
+  email     String         @unique
+  password  String
+  rol       Rol            @default(DOCENTE)
+  createdAt DateTime       @default(now())
+  docente   Docente?
+  admin     Administrador?
+}
+
+model Docente {
+  id          Int          @id @default(autoincrement())
+  usuarioId   Int          @unique
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  asignaturas Asignatura[]
+  examenes    Examen[]
+}
+
+model Administrador {
+  id        Int     @id @default(autoincrement())
+  usuarioId Int     @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────
+// JERARQUÍA ACADÉMICA
+// ─────────────────────────────────────────────
+
+model Grado {
+  id          Int               @id @default(autoincrement())
+  titulo      String
+  codigo      String            @unique
+  alumnos     Alumno[]
+  asignaturas GradoAsignatura[]
+}
+
+model Asignatura {
+  id             Int                @id @default(autoincrement())
+  titulo         String
+  codigo         String             @unique
+  cursoAcademico String
+  docenteId      Int
+  docente        Docente            @relation(fields: [docenteId], references: [id])
+  grados         GradoAsignatura[]
+  alumnos        AlumnoAsignatura[]
+  bateria        BateriaDePreguntas?
+  examenes       Examen[]
+}
+
+model GradoAsignatura {
+  gradoId      Int
+  asignaturaId Int
+  grado        Grado      @relation(fields: [gradoId], references: [id])
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id])
+
+  @@id([gradoId, asignaturaId])
+}
+
+model Alumno {
+  id          Int                @id @default(autoincrement())
+  nombre      String
+  apellidos   String
+  dni         String             @unique
+  gradoId     Int
+  grado       Grado              @relation(fields: [gradoId], references: [id])
+  asignaturas AlumnoAsignatura[]
+  examenes    Examen[]
+}
+
+model AlumnoAsignatura {
+  alumnoId     Int
+  asignaturaId Int
+  alumno       Alumno     @relation(fields: [alumnoId], references: [id])
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id])
+
+  @@id([alumnoId, asignaturaId])
+}
+
+// ─────────────────────────────────────────────
+// BATERÍA DE PREGUNTAS
+// ─────────────────────────────────────────────
+
+enum Dificultad {
+  BAJA
+  MEDIA
+  ALTA
+}
+
+model BateriaDePreguntas {
+  id           Int        @id @default(autoincrement())
+  asignaturaId Int        @unique
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id], onDelete: Cascade)
+  preguntas    Pregunta[]
+}
+
+model Pregunta {
+  id         Int                @id @default(autoincrement())
+  enunciado  String
+  tema       String
+  dificultad Dificultad         @default(MEDIA)
+  habilitada Boolean            @default(true)
+  bateriaId  Int
+  bateria    BateriaDePreguntas @relation(fields: [bateriaId], references: [id], onDelete: Cascade)
+  respuestas Respuesta[]
+  examenes   ExamenPregunta[]
+}
+
+model Respuesta {
+  id         Int      @id @default(autoincrement())
+  opcion     String
+  esCorrecta Boolean  @default(false)
+  preguntaId Int
+  pregunta   Pregunta @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────
+// EXÁMENES
+// ─────────────────────────────────────────────
+
+enum Evaluacion {
+  PARCIAL1
+  PARCIAL2
+  PARCIAL3
+  FINAL
+  EXTRAORDINARIO
+}
+
+model Examen {
+  id              Int            @id @default(autoincrement())
+  claveCorreccion String         @unique
+  evaluacion      Evaluacion
+  corregido       Boolean        @default(false)
+  nota            Float?
+  createdAt       DateTime       @default(now())
+  asignaturaId    Int
+  asignatura      Asignatura     @relation(fields: [asignaturaId], references: [id])
+  alumnoId        Int
+  alumno          Alumno         @relation(fields: [alumnoId], references: [id])
+  docenteId       Int
+  docente         Docente        @relation(fields: [docenteId], references: [id])
+  preguntas       ExamenPregunta[]
+}
+
+model ExamenPregunta {
+  examenId   Int
+  preguntaId Int
+  examen     Examen   @relation(fields: [examenId], references: [id])
+  pregunta   Pregunta @relation(fields: [preguntaId], references: [id])
+
+  @@id([examenId, preguntaId])
+}
