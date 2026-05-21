@@ -1,3 +1,3 @@
 # ¿Qué hace el sistema?
 
-> *En una frase. No qué gestiona: **qué hace**.*
+Permite a los profesores gestionar su banco de preguntas, generar exámenes tipo test personalizados con clave única para cada alumno y corregirlos automáticamente.
