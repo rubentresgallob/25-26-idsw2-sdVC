@@ -58,27 +58,20 @@ Segunda sesión. Se retoma desde el contexto persistido en `context/`. Stack ya 
 
 **[~10:00] Decisión de stack**
 
-**Prompt:** "vamos a decidir el stack a utilizar, según tu criterio, cual puede irnos mejor"
+Se evaluaron las opciones de backend (NestJS, Spring Boot, FastAPI), frontend (Angular, React, Vue) y base de datos. Se decidió NestJS + Angular + PostgreSQL con Prisma como ORM.
 
-**Resultado:** Claude propone NestJS + Angular + PostgreSQL (Prisma) + API Vision externa
-
-**Decisión:** Rubén acepta. Motivos principales:
-- NestJS ya conocido por el alumno → velocidad de desarrollo
+**Motivos clave:**
+- NestJS conocido → velocidad de desarrollo
 - Angular alineado con SOLID (DI nativo, módulos, tipado fuerte)
 - PostgreSQL para el modelo relacional complejo del dominio
-- API externa de visión: pragmático, foco en diseño SW
+- API externa de visión para la corrección: pragmatismo, foco en diseño SW
 
 **[~10:10] Tipo de aplicación**
 
-**Prompt:** "¿web, app...?"
-
-**Resultado:** Claude recomienda web SPA (no móvil)
-
-**Decisión:** Aceptado. Los docentes trabajan desde PC; subir imágenes de exámenes requiere pantalla grande.
+Se descartó la app móvil. El sistema es una **web SPA**: los docentes trabajan desde PC y necesitan pantalla grande para subir y gestionar exámenes.
 
 **[~10:15] Scaffolding backend NestJS**
 
-**Resultado:**
 - Proyecto NestJS creado en `backend/`
 - Dependencias instaladas: Prisma, JWT, Passport, Swagger, class-validator
 - Schema Prisma completo con 11 modelos: `Usuario`, `Docente`, `Administrador`, `Grado`, `Asignatura`, `Alumno`, `BateriaDePreguntas`, `Pregunta`, `Respuesta`, `Examen`, `ExamenPregunta`
@@ -86,18 +79,17 @@ Segunda sesión. Se retoma desde el contexto persistido en `context/`. Stack ya 
 - `PrismaService` configurado como módulo global exportado
 - `main.ts` con CORS, ValidationPipe, Swagger en `/docs`
 
-**Decisión:** Estructura modular 1-módulo-por-entidad. Favorece SRP y bajo acoplamiento.
+Decisión estructural: 1 módulo por entidad de dominio → alta cohesión, SRP visible en carpetas.
 
 **[~10:25] Scaffolding frontend Angular**
 
-**Resultado:**
 - Proyecto Angular creado en `frontend/` con SCSS y routing
 - 8 módulos de dominio en `features/`: auth, grado, asignatura, alumno, pregunta, examen
 - Módulos `core/` y `shared/` siguiendo arquitectura de tres capas
 - `AuthService`, `ApiService`, `AuthGuard`, `AuthInterceptor` en `core/`
-- Entornos configurados: `environment.ts` (dev, apiUrl localhost:3000) y `environment.prod.ts`
+- Entornos configurados: dev (`localhost:3000`) y producción
 
-**Decisión:** Arquitectura Angular por capas (core / shared / features) — favorece bajo acoplamiento entre módulos de dominio.
+Decisión estructural: arquitectura Angular `core/shared/features` → bajo acoplamiento entre módulos de dominio.
 
 ### Decisiones
 
@@ -116,3 +108,61 @@ Segunda sesión. Se retoma desde el contexto persistido en `context/`. Stack ya 
 ✅ Schema Prisma completo (11 modelos, enums, relaciones)  
 ✅ Frontend Angular scaffoldeado con arquitectura por capas  
 🎯 Próximo: implementar lógica de Auth (JWT), CRUD de Grado/Asignatura/Alumno/Pregunta
+
+---
+
+## Conversación 3 — 2026-05-24
+
+**Participantes:** Rubén Tresgallo + Claude Sonnet 4.6
+
+### Contexto
+
+Tercera sesión. Stack scaffoldeado y commiteado. Se retoma para implementar funcionalidad real: autenticación JWT y CRUDs de dominio.
+
+### Objetivos
+
+- Implementar autenticación JWT (registro y login)
+- Implementar CRUDs de Grado, Asignatura, Alumno y Pregunta
+
+### Desarrollo Principal
+
+**Autenticación JWT**
+
+Se implementó el módulo `auth` completo:
+- DTOs de registro y login con validación via `class-validator`
+- `AuthService`: registro con hash bcrypt, login, generación de JWT firmado con `JWT_SECRET`
+- Al registrar un `DOCENTE`, se crea automáticamente su fila en `Docente`; ídem para `ADMINISTRADOR`
+- `JwtStrategy` para validar tokens entrantes vía Bearer header
+- `RolesGuard` + decorador `@Roles()` para control de acceso por rol
+- Endpoint `GET /auth/perfil` protegido con `JwtAuthGuard`
+
+**CRUDs de dominio**
+
+Se implementaron los módulos: `Grado`, `Asignatura`, `Alumno`, `Pregunta`.
+
+Decisiones de diseño aplicadas:
+- Cada módulo importa `PrismaModule` y `AuthModule` — bajo acoplamiento, DIP respetado
+- `AsignaturaService.crear()` crea automáticamente la `BateriaDePreguntas` asociada (composición del dominio)
+- Endpoints de relaciones N:N como sub-recursos REST: `POST /asignaturas/:id/grados/:gradoId`, `POST /alumnos/:id/asignaturas/:asignaturaId`
+- `PreguntaController` anidado bajo `/baterias/:bateriaId/preguntas` para reflejar la composición del dominio
+- `PATCH /baterias/:id/preguntas/:id/toggle` para habilitar/deshabilitar preguntas sin PUT completo
+
+**Incidencia: Prisma 7 incompatible con NestJS estándar**
+
+El CLI instaló Prisma 7.x, que eliminó `url` del bloque `datasource` en `schema.prisma` y requiere adaptadores PG explícitos. Se decidió downgrade a Prisma 5 para mantener el foco en el diseño SW. `prisma.config.ts` eliminado.
+
+### Decisiones
+
+| Decisión | Motivo |
+|----------|--------|
+| Downgrade a Prisma 5 | Prisma 7 tiene breaking changes que añaden complejidad no relacionada con el diseño SW |
+| Crear `BateriaDePreguntas` dentro de `AsignaturaService` | La batería es una composición de la asignatura en el dominio, no debe crearse por separado |
+| Rutas N:N como sub-recursos REST | Refleja la semántica del dominio y mantiene los controllers cohesivos |
+| `PreguntaController` bajo `/baterias/:id/preguntas` | Expresa la dependencia de composición Batería→Pregunta en la URL |
+
+### Estado al finalizar
+
+✅ Auth JWT funcional (registro, login, perfil, guards por rol)  
+✅ CRUD completo: Grado, Asignatura, Alumno, Pregunta  
+✅ `npx tsc --noEmit` sin errores  
+🎯 Próximo: módulo Examen (generación parametrizada y corrección)
