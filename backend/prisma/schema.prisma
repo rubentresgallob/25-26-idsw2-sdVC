@@ -173,6 +173,7 @@ model Examen {
 model ExamenPregunta {
   examenId   Int
   preguntaId Int
+  peso       Float    @default(1)
   examen     Examen   @relation(fields: [examenId], references: [id])
   pregunta   Pregunta @relation(fields: [preguntaId], references: [id])
 

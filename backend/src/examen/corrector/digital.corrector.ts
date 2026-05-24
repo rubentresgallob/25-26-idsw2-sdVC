@@ -10,23 +10,29 @@ export class DigitalCorrectorService implements ICorrectorService {
     const examen = await this.prisma.examen.findUnique({
       where: { id: examenId },
       include: {
-        preguntas: { include: { pregunta: { include: { respuestas: true } } } },
+        preguntas: true,
         respuestas: true,
       },
     });
     if (!examen) throw new NotFoundException(`Examen #${examenId} no encontrado`);
 
     const totalPreguntas = examen.preguntas.length;
+    let nota = 0;
     let acertadas = 0;
 
     for (const respuestaAlumno of examen.respuestas) {
       const respuesta = await this.prisma.respuesta.findUnique({
         where: { id: respuestaAlumno.respuestaId },
       });
-      if (respuesta?.esCorrecta) acertadas++;
+      if (respuesta?.esCorrecta) {
+        const examenPregunta = examen.preguntas.find(
+          p => p.preguntaId === respuestaAlumno.preguntaId,
+        );
+        nota += examenPregunta?.peso ?? 0;
+        acertadas++;
+      }
     }
 
-    const nota = totalPreguntas > 0 ? (acertadas / totalPreguntas) * 10 : 0;
     return { nota: Math.round(nota * 100) / 100, totalPreguntas, acertadas };
   }
 }

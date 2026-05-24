@@ -64,7 +64,12 @@ export class ExamenService {
         estado: EstadoExamen.GENERADO,
         asignaturaId: dto.asignaturaId,
         docenteId: dto.docenteId,
-        preguntas: { create: seleccionadas.map(p => ({ preguntaId: p.id })) },
+        preguntas: {
+          create: seleccionadas.map(p => ({
+            preguntaId: p.id,
+            peso: Math.round((10 / dto.numPreguntas) * 100) / 100,
+          })),
+        },
       },
       include: { preguntas: { include: { pregunta: true } } },
     });
@@ -116,6 +121,33 @@ export class ExamenService {
     });
 
     return resultado;
+  }
+
+  // ── PESOS ─────────────────────────────────────────────────────────────────
+
+  async actualizarPeso(examenId: number, preguntaId: number, nuevoPeso: number) {
+    const examen = await this.findOne(examenId);
+    if (examen.estado !== EstadoExamen.GENERADO) {
+      throw new BadRequestException('Solo se pueden modificar pesos en exámenes en estado GENERADO');
+    }
+
+    const pesoActual = examen.preguntas.find(p => p.preguntaId === preguntaId)?.peso;
+    if (pesoActual === undefined) {
+      throw new NotFoundException(`La pregunta #${preguntaId} no pertenece a este examen`);
+    }
+
+    const sumaActual = examen.preguntas.reduce((acc, p) => acc + p.peso, 0);
+    const sumaNueva = Math.round((sumaActual - pesoActual + nuevoPeso) * 100) / 100;
+    if (sumaNueva > 10.001) {
+      throw new BadRequestException(
+        `El peso total del examen superaría 10 (suma actual: ${sumaActual.toFixed(2)}, disponible: ${(10 - sumaActual + pesoActual).toFixed(2)})`,
+      );
+    }
+
+    return this.prisma.examenPregunta.update({
+      where: { examenId_preguntaId: { examenId, preguntaId } },
+      data: { peso: nuevoPeso },
+    });
   }
 
   // ── CONSULTAS ─────────────────────────────────────────────────────────────
