@@ -147,20 +147,27 @@ enum Evaluacion {
   EXTRAORDINARIO
 }
 
+enum EstadoExamen {
+  GENERADO
+  ASIGNADO
+  CORREGIDO
+}
+
 model Examen {
   id              Int            @id @default(autoincrement())
   claveCorreccion String         @unique
   evaluacion      Evaluacion
-  corregido       Boolean        @default(false)
+  estado          EstadoExamen   @default(GENERADO)
   nota            Float?
   createdAt       DateTime       @default(now())
   asignaturaId    Int
   asignatura      Asignatura     @relation(fields: [asignaturaId], references: [id])
-  alumnoId        Int
-  alumno          Alumno         @relation(fields: [alumnoId], references: [id])
+  alumnoId        Int?
+  alumno          Alumno?        @relation(fields: [alumnoId], references: [id])
   docenteId       Int
   docente         Docente        @relation(fields: [docenteId], references: [id])
   preguntas       ExamenPregunta[]
+  respuestas      RespuestaAlumno[]
 }
 
 model ExamenPregunta {
@@ -170,4 +177,13 @@ model ExamenPregunta {
   pregunta   Pregunta @relation(fields: [preguntaId], references: [id])
 
   @@id([examenId, preguntaId])
+}
+
+// Respuestas que marca el alumno (para corrección digital)
+model RespuestaAlumno {
+  id         Int      @id @default(autoincrement())
+  examenId   Int
+  preguntaId Int
+  respuestaId Int
+  examen     Examen   @relation(fields: [examenId], references: [id])
 }

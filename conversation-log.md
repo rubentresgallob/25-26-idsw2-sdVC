@@ -165,4 +165,37 @@ El CLI instaló Prisma 7.x, que eliminó `url` del bloque `datasource` en `schem
 ✅ Auth JWT funcional (registro, login, perfil, guards por rol)  
 ✅ CRUD completo: Grado, Asignatura, Alumno, Pregunta  
 ✅ `npx tsc --noEmit` sin errores  
-🎯 Próximo: módulo Examen (generación parametrizada y corrección)
+
+---
+
+**Módulo Examen — diseño y debate previo**
+
+Antes de implementar se debatieron las decisiones de diseño clave:
+- Estado explícito (`EstadoExamen`: GENERADO → ASIGNADO → CORREGIDO) frente a estado inferido
+- Separación de `generarExamenes` y `asignarExamenes` como operaciones distintas
+- Corrección digital de inicio, escalable a imagen sin cambiar `ExamenService` (OCP)
+
+Se acordó una arquitectura con abstracción `ICorrectorService` que permite intercambiar implementaciones sin modificar el servicio orquestador.
+
+**Módulo Examen — implementación**
+
+- `ICorrectorService` (interfaz) + token de inyección `CORRECTOR_SERVICE`
+- `DigitalCorrectorService`: cruza respuestas del alumno con las correctas y calcula nota sobre 10
+- `ImageCorrectorService`: stub preparado para futura integración con API de visión
+- Schema Prisma actualizado: enum `EstadoExamen`, `alumnoId` nullable (el examen existe antes de asignarse), modelo `RespuestaAlumno` para corrección digital
+- `ExamenService`: genera variantes mediante selección aleatoria por proporción de dificultad; orquesta los tres flujos (generar, asignar, corregir) delegando la corrección en `ICorrectorService`
+- `ExamenModule` registra `DigitalCorrectorService` como provider de `CORRECTOR_SERVICE` — cambiar a imagen solo requiere cambiar `useClass`
+
+**Principios IDSW2 aplicados explícitamente:**
+- **OCP**: `ExamenService` no cambia al añadir `ImageCorrectorService`
+- **DIP**: `ExamenService` depende de `ICorrectorService`, nunca de la clase concreta
+- **SRP**: cada corrector tiene una única responsabilidad
+
+### Estado al finalizar
+
+✅ Auth JWT funcional (registro, login, perfil, guards por rol)  
+✅ CRUD completo: Grado, Asignatura, Alumno, Pregunta  
+✅ Módulo Examen completo: generación, asignación, corrección digital  
+✅ Arquitectura de corrección escalable a imagen (OCP + DIP)  
+✅ `npx tsc --noEmit` sin errores  
+🎯 Próximo: conectar frontend Angular con la API
