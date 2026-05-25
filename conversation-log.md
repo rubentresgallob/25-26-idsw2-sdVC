@@ -199,3 +199,77 @@ Se acordó una arquitectura con abstracción `ICorrectorService` que permite int
 ✅ Arquitectura de corrección escalable a imagen (OCP + DIP)  
 ✅ `npx tsc --noEmit` sin errores  
 🎯 Próximo: conectar frontend Angular con la API
+
+---
+
+## Conversación 4 — 2026-05-25
+
+**Participantes:** Rubén Tresgallo + Claude Sonnet 4.6
+
+### Contexto
+
+Cuarta sesión. Backend completamente funcional. Frontend scaffoldeado pero vacío. Objetivo: implementar la capa core del frontend y el módulo de autenticación con Angular Material.
+
+### Objetivos
+
+- Revisar el estado del proyecto y planificar el frontend completo
+- Implementar core (ApiService, AuthService, interceptor, guard)
+- Implementar Auth feature (login page con Angular Material)
+- Implementar layout principal (sidenav + toolbar)
+
+### Desarrollo Principal
+
+**Decisión de alcance**
+
+Se decidió construir el frontend completo (MVP + Angular Material + estilos cuidados), módulo a módulo empezando por core + auth.
+
+**Instalación de dependencias**
+
+Se instalaron `@angular/material@21.2.12`, `@angular/cdk` y `@angular/animations`. Material 21 en modo M3 (Material Design 3).
+
+**Capa Core implementada**
+
+- `ApiService`: wrapper de `HttpClient` con base URL del environment. Métodos `get`, `post`, `put`, `patch`, `delete` tipados con generics.
+- `AuthService`: login con tap para guardar `access_token` y `rol` en `localStorage`. Métodos `isAuthenticated`, `getToken`, `getRol`, `esAdmin`, `logout`.
+- `authInterceptor` (funcional): inyecta `AuthService` con `inject()`, añade `Authorization: Bearer <token>` a todas las requests si hay sesión.
+- `authGuard` (funcional): redirige a `/login` si `isAuthenticated()` es falso.
+- `auth.model.ts`: tipos `Rol`, `AuthResponse`, `UsuarioPerfil`.
+
+**SharedModule**
+
+Concentra todos los módulos de Angular Material (21 módulos), `ReactiveFormsModule`, `FormsModule`, `RouterModule`, `CommonModule` + declara y exporta `MainLayoutComponent`. Importado por AppModule y por todos los feature modules.
+
+**MainLayoutComponent**
+
+Layout completo con `mat-sidenav-container`: sidenav fija de 240px con logo + nav-list de ítems, toolbar superior con botón de logout. Ítems de nav filtrados por rol (docentes no ven la sección de administración). `routerLinkActive="nav-active"` para resaltar la ruta activa.
+
+**Auth feature — Login**
+
+Página de login con diseño centrado, card sobre fondo degradado azul. Formulario reactivo con validación: email (required + email), password (required). Botón de mostrar/ocultar contraseña. Spinner durante el login. Mensaje de error en línea.
+
+**App routing**
+
+Lazy loading de todos los módulos feature. Ruta raíz protegida por `authGuard`, muestra `MainLayoutComponent` con hijos. Redirección `/` → `/grados`. Feature modules stub tienen `RouterModule.forChild([])` para que el lazy loading funcione sin errores.
+
+**Resultado de compilación**
+
+`npm run build` sin errores. Lazy chunks generados para cada feature module. Warning de bundle size (Material es grande) pero no es un error.
+
+### Decisiones
+
+| Decisión | Motivo |
+|----------|--------|
+| `provideHttpClient(withInterceptors([]))` en AppModule | Interceptor funcional requiere esta API (Angular 17+), compatible con NgModule |
+| `provideAnimationsAsync()` en providers | API moderna de Angular 17+, carga animaciones de forma asíncrona |
+| SharedModule declara MainLayoutComponent | Evita circular dependency; el layout necesita Material que está en SharedModule |
+| Token y rol guardados en localStorage por separado | El backend devuelve `{ access_token, rol }` explícitamente; evita decodificar JWT en frontend |
+| Feature modules stub con `RouterModule.forChild([])` | Permite lazy loading sin errores hasta que se implementen los componentes |
+
+### Estado al finalizar
+
+✅ Core completo: ApiService, AuthService, interceptor, guard  
+✅ Login page funcional con Angular Material  
+✅ Layout principal con sidenav y toolbar  
+✅ Routing con lazy loading configurado para todos los módulos  
+✅ Build sin errores — dev server en http://localhost:4200  
+🎯 Próximo: módulo Grado (lista + formulario crear/editar)
