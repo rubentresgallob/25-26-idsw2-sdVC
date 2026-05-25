@@ -273,3 +273,43 @@ Lazy loading de todos los módulos feature. Ruta raíz protegida por `authGuard`
 ✅ Routing con lazy loading configurado para todos los módulos  
 ✅ Build sin errores — dev server en http://localhost:4200  
 🎯 Próximo: módulo Grado (lista + formulario crear/editar)
+
+---
+
+## Conversación 5 — 2026-05-25
+
+**Participantes:** Rubén Tresgallo + Claude Sonnet 4.6
+
+### Contexto
+
+Quinta sesión. Core + Auth + layout funcional y commiteado. Se arrancó el entorno completo: PostgreSQL (contraseña reseteada a `Jorgestor2026!`), base de datos `jorgestor_db` creada con `prisma db push`, backend NestJS en puerto 3000, frontend Angular en puerto 4200. Login verificado con dos cuentas (ADMINISTRADOR y DOCENTE).
+
+### Objetivos
+
+- Implementar módulo Grado: modelo, servicio, lista y formulario
+
+### Desarrollo Principal
+
+**Módulo Grado**
+
+- `grado.model.ts`: interfaces `Grado` y `CreateGradoDto`
+- `GradoService`: CRUD completo via `ApiService` (getAll, getOne, crear, actualizar, eliminar)
+- `GradoListComponent`: tabla Material con columnas código/título/acciones, estado vacío con CTA, spinner de carga, botón eliminar con confirm()
+- `GradoFormComponent`: diálogo Material reutilizable para crear y editar (detecta modo por presencia de `data.grado`), usa `patchValue` para precarga
+- `GradoRoutingModule` + `GradoModule`: lazy loading funcional
+
+**Patrón establecido para todos los módulos siguientes:** model → service → form (dialog) → list → routing → module.
+
+### Decisiones
+
+| Decisión | Motivo |
+|----------|--------|
+| Formulario como `MatDialog` | Evita navegar a una ruta separada; el usuario ve la lista sin perder contexto |
+| `confirm()` nativo para eliminar | Suficiente para el alcance académico; sin necesidad de diálogo de confirmación personalizado |
+| `GradoFormComponent` sin SCSS propio | Los estilos de diálogo vienen de SharedModule; no hay CSS específico que añadir |
+
+### Estado al finalizar
+
+✅ Módulo Grado completo (modelo, servicio, lista, formulario, routing)
+✅ Build sin errores — grado-module: 8.5 kB
+🎯 Próximo: módulo Asignatura

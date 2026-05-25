@@ -1,0 +1,53 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Grados</h1>
+    <p class="page-subtitle">Gestión de grados académicos</p>
+  </div>
+  <button mat-raised-button color="primary" (click)="abrirFormulario()">
+    <mat-icon>add</mat-icon>
+    Nuevo grado
+  </button>
+</div>
+
+<mat-card class="table-card">
+  <div class="spinner-container" *ngIf="cargando">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!cargando && grados.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">school</mat-icon>
+    <p>No hay grados registrados todavía.</p>
+    <button mat-stroked-button color="primary" (click)="abrirFormulario()">
+      Crear el primero
+    </button>
+  </div>
+
+  <mat-table [dataSource]="grados" *ngIf="!cargando && grados.length > 0" class="mat-elevation-z0">
+    <ng-container matColumnDef="codigo">
+      <mat-header-cell *matHeaderCellDef>Código</mat-header-cell>
+      <mat-cell *matCellDef="let g">
+        <span class="chip-codigo">{{ g.codigo }}</span>
+      </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="titulo">
+      <mat-header-cell *matHeaderCellDef>Título</mat-header-cell>
+      <mat-cell *matCellDef="let g">{{ g.titulo }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <mat-header-cell *matHeaderCellDef></mat-header-cell>
+      <mat-cell *matCellDef="let g" class="acciones-cell">
+        <button mat-icon-button matTooltip="Editar" (click)="abrirFormulario(g)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="eliminar(g)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="columnas"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: columnas;"></mat-row>
+  </mat-table>
+</mat-card>

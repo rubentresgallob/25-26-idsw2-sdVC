@@ -1,8 +1,11 @@
 import { NgModule } from '@angular/core';
-import { RouterModule } from '@angular/router';
 import { SharedModule } from '../../shared/shared-module';
+import { GradoRoutingModule } from './grado-routing-module';
+import { GradoListComponent } from './grado-list/grado-list.component';
+import { GradoFormComponent } from './grado-form/grado-form.component';
 
 @NgModule({
-  imports: [SharedModule, RouterModule.forChild([])],
+  declarations: [GradoListComponent, GradoFormComponent],
+  imports: [SharedModule, GradoRoutingModule],
 })
 export class GradoModule {}

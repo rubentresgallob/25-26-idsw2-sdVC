@@ -1,0 +1,79 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.page-subtitle {
+  margin: 0.25rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: #999;
+
+  .empty-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+.chip-codigo {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.acciones-cell {
+  justify-content: flex-end;
+}
+
+mat-header-cell,
+mat-cell {
+  padding: 0 1rem !important;
+}
+
+mat-header-row {
+  background: #f8f9fa;
+}
